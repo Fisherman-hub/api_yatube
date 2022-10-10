@@ -57,5 +57,3 @@ class CommentAPICreateReadList(ModelViewSet):
         pk = self.kwargs['post_id']
         post = get_object_or_404(Post, id=pk)
         return post.comments
-
-
