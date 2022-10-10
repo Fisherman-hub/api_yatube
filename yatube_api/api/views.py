@@ -6,12 +6,13 @@ from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 
 from api.serializers import CommentSerializer, GroupSerializer, PostSerializer
 from posts.models import Comment, Group, Post
+from .permissions import IsOwnerOrReadOnly
 
 
 class PostAPIView(ModelViewSet):
     queryset = Post.objects.all()
     serializer_class = PostSerializer
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (permissions.IsAuthenticated, IsOwnerOrReadOnly,)
 
     def get_object(self):
         return Post.objects.get(pk=self.kwargs['pk'])
@@ -45,33 +46,16 @@ class GroupAPIReadDetail(ModelViewSet):
 class CommentAPICreateReadList(ModelViewSet):
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (permissions.IsAuthenticated, IsOwnerOrReadOnly)
 
     def perform_create(self, serializer):
+        post = get_object_or_404(Post, pk=self.kwargs['post_id'])
         serializer.save(author=self.request.user,
-                        post_id=self.kwargs['post_id'])
+                        post=post)
 
     def get_queryset(self):
         pk = self.kwargs['post_id']
         post = get_object_or_404(Post, id=pk)
-        return Comment.objects.filter(post=post)
+        return post.comments
 
-    def get_object(self):
-        queryset = self.get_queryset()
-        obj = get_object_or_404(queryset, pk=self.kwargs['pk'])
-        self.check_object_permissions(self.request, obj)
-        return obj
 
-    def retrieve(self, request, *args, **kwargs):
-        serializer = self.get_serializer(self.get_object())
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-    def destroy(self, request, *args, **kwargs):
-        if request.user != self.get_object().author:
-            return Response(status=status.HTTP_403_FORBIDDEN)
-        return super().destroy(request, *args, **kwargs)
-
-    def update(self, request, *args, **kwargs):
-        if request.user != self.get_object().author:
-            return Response(status=status.HTTP_403_FORBIDDEN)
-        return super().update(request, *args, **kwargs)
