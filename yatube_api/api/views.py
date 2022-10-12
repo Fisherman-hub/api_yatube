@@ -1,7 +1,5 @@
 from django.shortcuts import get_object_or_404
 from rest_framework import permissions
-from rest_framework import status
-from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 
 from api.serializers import CommentSerializer, GroupSerializer, PostSerializer
@@ -14,21 +12,8 @@ class PostAPIView(ModelViewSet):
     serializer_class = PostSerializer
     permission_classes = (permissions.IsAuthenticated, IsOwnerOrReadOnly,)
 
-    def get_object(self):
-        return Post.objects.get(pk=self.kwargs['pk'])
-
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
-
-    def update(self, request, *args, **kwargs):
-        if request.user != self.get_object().author:
-            return Response(status=status.HTTP_403_FORBIDDEN)
-        return super().update(request, *args, **kwargs)
-
-    def destroy(self, request, *args, **kwargs):
-        if request.user != self.get_object().author:
-            return Response(status=status.HTTP_403_FORBIDDEN)
-        return super(PostAPIView, self).destroy(request, *args, **kwargs)
 
 
 class GroupAPICreateReadList(ReadOnlyModelViewSet):

@@ -6,7 +6,6 @@ from .views import (CommentAPICreateReadList,
                     GroupAPICreateReadList,
                     PostAPIView)
 
-
 app_name = 'api'
 
 router = routers.DefaultRouter()
